@@ -1,6 +1,6 @@
 // With(in) service worker: works offline and picks up new versions automatically.
 // When you change the game, bump VERSION so returning players get the update.
-const VERSION = "within-v1";
+const VERSION = "within-v2";
 const SHELL = ["./", "index.html", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 

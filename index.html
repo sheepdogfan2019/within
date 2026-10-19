@@ -81,8 +81,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .steps i{width:30px;height:7px;border-radius:4px;background:var(--line)}
 .steps i.e{background:var(--e)} .steps i.m{background:var(--m)} .steps i.h{background:var(--h)}
 .clue{font-family:var(--f-display);font-weight:600;font-size:1.85rem;line-height:1.15;margin:0;text-wrap:balance}
-.tiles{display:flex;flex-wrap:wrap;gap:7px;perspective:600px}
-.t{width:46px;height:52px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.45rem;background:var(--tile);color:var(--tile-ink);border-radius:12px;border:0;padding:0;box-shadow:0 3px 0 var(--line);transition:transform .2s, box-shadow .2s}
+.tiles{--n:5;--gap:clamp(3px,1.6vw,7px);display:grid;grid-template-columns:repeat(var(--n),minmax(0,46px));gap:var(--gap);perspective:600px;container-type:inline-size;width:100%}
+.t{width:100%;height:auto;aspect-ratio:46/52;min-width:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:min(1.45rem,calc((100cqi - (var(--n) - 1)*var(--gap))/var(--n)*.55));background:var(--tile);color:var(--tile-ink);border-radius:12px;border:0;padding:0;box-shadow:0 3px 0 var(--line);transition:transform .2s, box-shadow .2s}
 .t.p{background:var(--hid);color:var(--hid-ink);box-shadow:0 3px 0 var(--hid-edge)}
 button.t{cursor:pointer}
 button.t:hover{transform:translateY(-2px)}
@@ -143,7 +143,7 @@ button.t:hover{transform:translateY(-2px)}
 .modal ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:5px}
 .ex{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:var(--bg)}
 .ex .clue{font-size:1.3rem}
-.ex .t{width:40px;height:44px;font-size:1.2rem}
+.ex .tiles{--n:4;max-width:200px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-family:var(--f-display);font-weight:600;font-size:.8rem;padding:3px 10px;border-radius:999px;background:var(--lvl-soft);color:var(--lvl-ink)}
 .label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -161,6 +161,10 @@ button.t:hover{transform:translateY(-2px)}
 .astat{font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--tile);color:var(--muted);font-variant-numeric:tabular-nums}
 .astat.done{background:var(--e-soft);color:var(--e-ink)}
 .astat.progress{background:var(--m-soft);color:var(--m-ink)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stats div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:14px;background:var(--bg);text-align:center}
+.stats b{font-family:var(--f-display);font-weight:700;font-size:1.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.stats span{font-size:.72rem;color:var(--muted);line-height:1.2}
 .fb{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:12px}
 .fbtoggle{align-self:flex-start;font:inherit;font-size:.85rem;font-weight:700;color:var(--muted);background:none;border:0;padding:2px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .fbform{display:flex;flex-direction:column;gap:4px}
@@ -192,7 +196,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--hid-edge);outli
     <div class="ex">
       <span class="label">Example</span>
       <p class="clue">Sit down dinner</p>
-      <div class="tiles"><span class="t">S</span><span class="t p">E</span><span class="t p">A</span><span class="t p">T</span></div>
+      <div class="tiles" style="--n:4"><span class="t">S</span><span class="t p">E</span><span class="t p">A</span><span class="t p">T</span></div>
       <p style="font-size:.9rem">"Sit down" points to <b>SEAT</b>. "Dinner" points to <b>EAT</b>, hiding inside it. The lavender tiles show where the hidden word sits.</p>
     </div>
     <div class="chips"><span class="chip lvl-Easy">Easy</span><span class="chip lvl-Medium">Medium</span><span class="chip lvl-Hard">Hard</span><span style="font-size:.85rem;color:var(--muted)">one new round of each, every day</span></div>
@@ -370,7 +374,7 @@ function renderPuzzle(s){
     </div>
     <div class="steps" aria-hidden="true">${["e","m","h"].map((c,i)=>`<i class="${i<=s.idx?c:""}"></i>`).join("")}</div>
     <p class="clue">${esc(pz.clue)}</p>
-    <div class="tiles ${st.status==="playing"?`mode-${mode}`:""} ${fx.shake?"shake":""}" aria-label="${pz.answer.length} letters, ${pz.inner.length} of them hidden-word tiles">${tilesHTML(pz, st)}</div>
+    <div class="tiles ${st.status==="playing"?`mode-${mode}`:""} ${fx.shake?"shake":""}" style="--n:${pz.answer.length}" aria-label="${pz.answer.length} letters, ${pz.inner.length} of them hidden-word tiles">${tilesHTML(pz, st)}</div>
     ${st.status==="playing" ? `
       <div class="modes" role="group" aria-label="What are you guessing?">
         <button class="mode" data-m="full" aria-pressed="${mode==="full"}">Full word · ${pz.answer.length}</button>
@@ -452,11 +456,46 @@ function untilTomorrow(){
 }
 let ticker = null;
 
+/* ---------- Stats and spoiler-free share links ---------- */
+const LV_EMOJI = {Easy:"🟢", Medium:"🟠", Hard:"🔴"};
+const LEVELS = ["Easy","Medium","Hard"];
+const puzzleCode = st=>(st.status==="won"?"w":"l")+[st.status==="won"?st.points:0, st.used, st.clueUsed.length, st.hiddenFound?1:0].join("");
+function computeStats(){
+  const done = Object.entries(save).filter(([,s])=>s && s.idx>=3);
+  const totals = done.map(([,s])=>dayTotal(s));
+  const perfect = done.reduce((a,[,s])=>a+s.p.filter(x=>x.status==="won"&&x.points===6).length,0);
+  const doneKeys = new Set(done.map(([k])=>k));
+  let n = doneKeys.has(dayFor(TODAY).key) ? TODAY : TODAY-1, streak = 0;
+  while(n>=1 && doneKeys.has(dayFor(n).key)){ streak++; n--; }
+  return { played: done.length, avg: totals.length ? Math.round(totals.reduce((a,b)=>a+b,0)/totals.length*10)/10 : 0, streak, perfect };
+}
+function shareURL(s){
+  const st = computeStats();
+  const p = new URLSearchParams({d:DAY.num, r:s.p.map(puzzleCode).join("-"), n:st.played, a:st.avg, k:st.streak, f:st.perfect});
+  return location.origin + location.pathname + "?" + p.toString();
+}
+function describe(code){
+  const won = code[0]==="w", pts=+code[1], used=+code[2], clues=+code[3], hid=code[4]==="1";
+  if(!won) return {pts:0, text:"Missed it"+(hid?" · found the hidden word":"")};
+  const g = used+1, bits = [g===1 ? "Solved on the first guess" : `Solved in ${g} guesses`];
+  if(clues) bits.push(`${clues} ${clues===1?"clue":"clues"}`);
+  if(hid) bits.push("found the hidden word first");
+  return {pts, text: bits.join(" · ")};
+}
+function statsHTML(st){
+  return `<div class="stats">
+    <div><b>${st.played}</b><span>Played</span></div>
+    <div><b>${st.avg}</b><span>Avg score</span></div>
+    <div><b>${st.streak}</b><span>Streak</span></div>
+    <div><b>${st.perfect}</b><span>Perfect puzzles</span></div>
+  </div>`;
+}
+
 function renderSummary(s){
   delete document.body.dataset.lvl;
   const total = dayTotal(s);
   const lines = DAY.puzzles.map((pz,i)=>{ const st=s.p[i]; return `<div class="line lvl-${pz.level}"><small>${pz.level}</small><span class="w">${pz.answer}${st.status==="lost"?" · missed":""}</span><span class="n">${st.status==="won"?st.points:0}</span></div>`; }).join("");
-  const share = `With(in) #${DAY.num}: ${total}/18\n` + DAY.puzzles.map((pz,i)=>`${{Easy:"🟢",Medium:"🟠",Hard:"🔴"}[pz.level]} ${s.p[i].status==="won"?s.p[i].points:"✗"}`).join("  ");
+  const text = `With(in) #${DAY.num}: ${total}/18\n` + DAY.puzzles.map((pz,i)=>`${LV_EMOJI[pz.level]} ${s.p[i].status==="won"?s.p[i].points:"✗"}`).join("  ");
   fx.win = total>=12;
   $("#main").innerHTML = `
   <section class="card summary">
@@ -464,8 +503,10 @@ function renderSummary(s){
     <span class="label">Daily #${DAY.num} complete</span>
     <h2>${total} <small>/ 18 points</small></h2>
     <div class="lines">${lines}</div>
+    <span class="label">Your stats</span>
+    ${statsHTML(computeStats())}
     <div class="row" style="flex-wrap:wrap;align-items:center">
-      <button class="btn" id="copy" style="--lvl:var(--hid-edge)">Copy score</button>
+      <button class="btn" id="share" style="--lvl:var(--hid-edge)">Share results</button>
       ${isToday() ? `<span class="next">Next round in <b id="countdown">${untilTomorrow()}</b></span>`
         : `<button class="btn alt" id="toarch">Back to archive</button><button class="btn alt" id="totoday">Today's round</button>`}
     </div>
@@ -475,12 +516,54 @@ function renderSummary(s){
   fx = {flip:[], win:false, shake:false};
   [$("#toarch"),$("#toarch2")].forEach(b=>{ if(b) b.onclick=()=>{ view="archive"; render(); }; });
   const tt=$("#totoday"); if(tt) tt.onclick=()=>goDay(TODAY);
-  $("#copy").onclick=async()=>{
-    try{ await navigator.clipboard.writeText(share); $("#cmsg").textContent="Score copied."; }
-    catch(e){ $("#cmsg").textContent = share; }
+  $("#share").onclick=async()=>{
+    const url = shareURL(s);
+    if(navigator.share){
+      try{ await navigator.share({title:"With(in)", text, url}); return; }
+      catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    try{ await navigator.clipboard.writeText(text+"\n"+url); $("#cmsg").textContent="Results and link copied. Paste them anywhere; the link shows your scores but no answers."; }
+    catch(e){ $("#cmsg").textContent = text+"\n"+url; }
   };
   clearInterval(ticker);
   ticker = setInterval(()=>{ const c=$("#countdown"); if(c) c.textContent=untilTomorrow(); checkNewDay(); },1000);
+}
+
+/* A shared link (?d=..&r=..) opens a results card for that player, with no answers */
+function sharedFromURL(){
+  try{
+    const q = new URLSearchParams(location.search);
+    const d = parseInt(q.get("d"),10), codes = (q.get("r")||"").split("-");
+    if(!(d>=1) || codes.length!==3 || !codes.every(c=>/^[wl][0-6][0-3][0-3][01]$/.test(c))) return null;
+    const num = k=>{ const v=parseFloat(q.get(k)); return isFinite(v)&&v>=0 ? v : 0; };
+    return {d, codes, stats:{played:Math.round(num("n")), avg:Math.min(18,num("a")), streak:Math.round(num("k")), perfect:Math.round(num("f"))}};
+  }catch(e){ return null; }
+}
+function showShared(sh){
+  const total = sh.codes.reduce((a,c)=>a+describe(c).pts,0);
+  const rows = sh.codes.map((c,i)=>{ const x=describe(c); return `<div class="line lvl-${LEVELS[i]}"><small>${LEVELS[i]}</small><span class="w">${esc(x.text)}</span><span class="n">${x.pts}</span></div>`; }).join("");
+  const box = document.createElement("div");
+  box.className="overlay"; box.id="shared";
+  box.innerHTML = `
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shared-h">
+    <span class="label">A friend's results</span>
+    <h2 id="shared-h">With(in) #${sh.d}: ${total} <small style="font-size:1rem;color:var(--muted);font-weight:500">/ 18</small></h2>
+    <div class="lines">${rows}</div>
+    ${statsHTML(sh.stats)}
+    <p style="font-size:.9rem;color:var(--muted)">No answers here. ${sh.d<=TODAY?`Can you beat it?`:""}</p>
+    <button class="btn" id="shared-go" style="--lvl:var(--hid-edge)">${sh.d===TODAY?"Play today's round":sh.d<TODAY?`Play round #${sh.d}`:"Play today's round"}</button>
+  </div>`;
+  document.body.append(box);
+  const close = ()=>{
+    box.remove();
+    try{ history.replaceState(null,"",location.pathname); }catch(e){}
+    if(sh.d<TODAY) goDay(sh.d);
+    let seen=false; try{ seen=!!localStorage.getItem("within-seen") }catch(e){}
+    if(!seen) showHow(true);
+  };
+  $("#shared-go").onclick=close;
+  box.addEventListener("click",e=>{ if(e.target===box) close(); });
+  $("#shared-go").focus();
 }
 
 function checkNewDay(){
@@ -505,8 +588,9 @@ $("#howto").addEventListener("click",e=>{ if(e.target.id==="howto") $("#howto-cl
 document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#howto").hidden) $("#howto-close").click(); });
 
 render();
-let seen=false; try{ seen=!!localStorage.getItem("within-seen") }catch(e){}
-if(!seen) showHow(true);
+const SHARED = sharedFromURL();
+if(SHARED) showShared(SHARED);
+else { let seen=false; try{ seen=!!localStorage.getItem("within-seen") }catch(e){} if(!seen) showHow(true); }
 </script>
 <script>
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
