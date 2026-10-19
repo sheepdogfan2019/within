@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>With(in)</title>
+<meta name="description" content="A daily hidden-word puzzle. Every answer hides a smaller word inside it.">
+<meta name="theme-color" content="#f7f5fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17151f" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="With(in)">
+<meta property="og:title" content="With(in)">
+<meta property="og:description" content="A daily hidden-word puzzle. Every answer hides a smaller word inside it.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one centered play column; the card and page wash take the puzzle's difficulty color (green / orange / red), hidden-word tiles stay lavender */
+:root{
+  --bg:#f7f5fb; --card:#ffffff; --ink:#2d2a40; --muted:#7c7892; --line:#ebe7f3;
+  --tile:#ece9f3; --tile-ink:#2d2a40; --hid:#c4b2fb; --hid-ink:#24184f; --hid-edge:#9d84f0;
+  --e:#6cc59a; --e-soft:#e4f6ec; --e-ink:#1e5a3d;
+  --m:#f1a65e; --m-soft:#fdeedf; --m-ink:#7b4511;
+  --h:#eb7f7f; --h-soft:#fde6e6; --h-ink:#7e2424;
+  --good:#3f9e6d; --bad:#d0605f; --shadow:rgba(60,40,110,.10); --on-lvl:#1f1c2e;
+  --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17151f; --card:#221f2d; --ink:#f0ecf8; --muted:#a7a2b9; --line:#353047;
+  --tile:#363149; --tile-ink:#f0ecf8; --hid:#9f86ef; --hid-ink:#160d34; --hid-edge:#c2affa;
+  --e:#62bd8e; --e-soft:#1d3329; --e-ink:#aeeacb;
+  --m:#e9a25d; --m-soft:#3a2b19; --m-ink:#f8d0a2;
+  --h:#e57d7d; --h-soft:#3d2023; --h-ink:#f7b8b8;
+  --good:#6fd29f; --bad:#f08b8a; --shadow:rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17151f; --card:#221f2d; --ink:#f0ecf8; --muted:#a7a2b9; --line:#353047;
+  --tile:#363149; --tile-ink:#f0ecf8; --hid:#9f86ef; --hid-ink:#160d34; --hid-edge:#c2affa;
+  --e:#62bd8e; --e-soft:#1d3329; --e-ink:#aeeacb;
+  --m:#e9a25d; --m-soft:#3a2b19; --m-ink:#f8d0a2;
+  --h:#e57d7d; --h-soft:#3d2023; --h-ink:#f7b8b8;
+  --good:#6fd29f; --bad:#f08b8a; --shadow:rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+html{min-height:100%}
+body{min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;transition:background .5s}
+body[data-lvl]{background:radial-gradient(120% 70% at 50% -10%, var(--lvl-soft) 0%, var(--bg) 60%) fixed, var(--bg)}
+body[data-lvl="Easy"],.lvl-Easy{--lvl:var(--e);--lvl-soft:var(--e-soft);--lvl-ink:var(--e-ink)}
+body[data-lvl="Medium"],.lvl-Medium{--lvl:var(--m);--lvl-soft:var(--m-soft);--lvl-ink:var(--m-ink)}
+body[data-lvl="Hard"],.lvl-Hard{--lvl:var(--h);--lvl-soft:var(--h-soft);--lvl-ink:var(--h-ink)}
+.wrap{max-width:560px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:flex;gap:4px;align-items:center}
+.logo span{width:32px;height:36px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.1rem;background:var(--card);color:var(--ink);border-radius:9px;box-shadow:0 2px 0 var(--line)}
+.logo span.p{background:var(--hid);color:var(--hid-ink);box-shadow:0 2px 0 var(--hid-edge)}
+.logo span:nth-child(5){animation:bob 3s ease-in-out infinite}
+.logo span:nth-child(6){animation:bob 3s ease-in-out .15s infinite}
+@keyframes bob{0%,80%,100%{transform:translateY(0)}88%{transform:translateY(-4px)}}
+.icon-btn{font:inherit;font-weight:700;width:38px;height:38px;border-radius:50%;border:0;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:0 2px 8px var(--shadow)}
+.rounds{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.rbtn{flex:0 0 auto;font:inherit;font-size:.85rem;min-width:46px;padding:6px 10px;border-radius:14px;border:0;background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.2;font-variant-numeric:tabular-nums;box-shadow:0 1px 4px var(--shadow)}
+.rbtn span{font-family:var(--f-display);font-weight:600}
+.rbtn small{font-size:.7rem;color:var(--muted)}
+.rbtn[aria-current="true"]{background:var(--ink);color:var(--card)}
+.rbtn[aria-current="true"] small{color:var(--card);opacity:.8}
+.rbtn.done:not([aria-current="true"]) small{color:var(--hid-edge);font-weight:700}
+.card{position:relative;overflow:hidden;background:var(--card);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px var(--shadow)}
+.card::before{content:"";position:absolute;inset:0 0 auto;height:6px;background:var(--lvl,var(--hid))}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted);gap:8px;flex-wrap:wrap}
+.level{font-family:var(--f-display);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:4px 12px;border-radius:999px;background:var(--lvl-soft);color:var(--lvl-ink)}
+.steps{display:flex;gap:6px}
+.steps i{width:30px;height:7px;border-radius:4px;background:var(--line)}
+.steps i.e{background:var(--e)} .steps i.m{background:var(--m)} .steps i.h{background:var(--h)}
+.clue{font-family:var(--f-display);font-weight:600;font-size:1.85rem;line-height:1.15;margin:0;text-wrap:balance}
+.tiles{display:flex;flex-wrap:wrap;gap:7px;perspective:600px}
+.t{width:46px;height:52px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.45rem;background:var(--tile);color:var(--tile-ink);border-radius:12px;border:0;padding:0;box-shadow:0 3px 0 var(--line);transition:transform .2s, box-shadow .2s}
+.t.p{background:var(--hid);color:var(--hid-ink);box-shadow:0 3px 0 var(--hid-edge)}
+button.t{cursor:pointer}
+button.t:hover{transform:translateY(-2px)}
+.tiles.mode-hidden .t.p{transform:translateY(-4px);box-shadow:0 3px 0 var(--hid-edge),0 0 0 3px var(--card),0 0 0 5px var(--hid-edge)}
+.tiles.mode-full .t:not(.p){box-shadow:0 3px 0 var(--line),0 0 0 3px var(--card),0 0 0 5px var(--lvl)}
+.t.flip{animation:flip .5s ease both}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.t.win{animation:hop .5s ease both}
+@keyframes hop{40%{transform:translateY(-12px)}70%{transform:translateY(2px)}}
+.shake{animation:shake .4s ease}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.modes{display:flex;gap:6px;background:var(--tile);padding:4px;border-radius:14px}
+.mode{flex:1;font:inherit;font-size:.85rem;font-weight:700;padding:8px 10px;border-radius:11px;border:0;background:none;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.mode[aria-pressed="true"]{background:var(--card);color:var(--lvl-ink);box-shadow:0 1px 4px var(--shadow)}
+.mode.hid[aria-pressed="true"]{background:var(--hid);color:var(--hid-ink)}
+.mode:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px}
+.guess{flex:1;min-width:0;font-family:var(--f-display);font-weight:600;font-size:1.2rem;letter-spacing:.22em;text-transform:uppercase;padding:11px 14px;border:2px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);transition:border-color .2s}
+.guess:focus{border-color:var(--lvl)}
+.guess.hid,.guess.hid:focus{border-color:var(--hid-edge)}
+.btn{font:inherit;font-weight:700;padding:11px 18px;border-radius:14px;border:0;background:var(--lvl,var(--hid-edge));color:var(--on-lvl);cursor:pointer;box-shadow:0 3px 0 color-mix(in srgb, var(--lvl,var(--hid-edge)) 70%, #000);transition:transform .1s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb, var(--lvl,var(--hid-edge)) 70%, #000)}
+.btn.hid{background:var(--hid);color:var(--hid-ink);box-shadow:0 3px 0 var(--hid-edge)}
+.btn.alt{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pts{display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.worth{font-family:var(--f-display);font-weight:700;font-size:1.3rem;color:var(--lvl-ink);background:var(--lvl-soft);min-width:42px;height:42px;border-radius:50%;display:grid;place-items:center}
+.dots{display:flex;gap:4px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--lvl)}
+.dots i.used{background:var(--line)}
+.msg{min-height:1.5em;font-size:.92rem;margin:0}
+.msg.bad{color:var(--bad)} .msg.good{color:var(--good)}
+.tries{display:flex;gap:6px;flex-wrap:wrap}
+.tries span{font-family:var(--f-display);font-weight:600;font-size:.85rem;padding:3px 10px;border-radius:999px;background:var(--tile);color:var(--muted)}
+.tries span.x{text-decoration:line-through}
+.tries span.h{background:var(--hid);color:var(--hid-ink)}
+.result{display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:16px;background:var(--lvl-soft);color:var(--lvl-ink)}
+.result .big{font-family:var(--f-display);font-weight:700;font-size:1.4rem}
+.result .eq{font-size:1rem}
+.result .eq b{font-family:var(--f-display)}
+.burst{position:absolute;inset:0;pointer-events:none}
+.burst i{position:absolute;left:50%;top:45%;width:9px;height:9px;border-radius:3px;opacity:0;animation:burst 1s ease-out forwards}
+@keyframes burst{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
+@media (prefers-reduced-motion: reduce){.t.flip,.t.win,.shake,.burst i,.logo span{animation:none!important}.burst{display:none}}
+.summary{display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.summary h2{font-family:var(--f-display);font-weight:700;font-size:2.4rem;margin:0;line-height:1}
+.summary h2 small{font-size:1rem;color:var(--muted);font-weight:500}
+.lines{display:flex;flex-direction:column;gap:8px}
+.line{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;background:var(--lvl-soft);color:var(--lvl-ink)}
+.line .w{flex:1;min-width:0;font-family:var(--f-display);font-weight:600}
+.line .n{font-family:var(--f-display);font-weight:700;font-size:1.2rem;font-variant-numeric:tabular-nums}
+.line small{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;width:58px}
+.overlay{position:fixed;inset:0;background:color-mix(in srgb, var(--ink) 40%, transparent);display:grid;place-items:center;padding:16px;z-index:20;overflow-y:auto;backdrop-filter:blur(3px)}
+.modal{background:var(--card);color:var(--ink);border-radius:24px;max-width:440px;width:100%;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px var(--shadow)}
+.modal h2{font-family:var(--f-display);font-weight:700;font-size:1.6rem;margin:0}
+.modal p{margin:0}
+.modal ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:5px}
+.ex{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:var(--bg)}
+.ex .clue{font-size:1.3rem}
+.ex .t{width:40px;height:44px;font-size:1.2rem}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--f-display);font-weight:600;font-size:.8rem;padding:3px 10px;border-radius:999px;background:var(--lvl-soft);color:var(--lvl-ink)}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.daylabel{flex:1;display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;font-size:.8rem;color:var(--muted);margin-right:4px}
+.daylabel b{font-family:var(--f-display);font-weight:600;font-size:1rem;color:var(--ink)}
+.next{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.next b{color:var(--ink)}
+.pill{font:inherit;font-size:.85rem;font-weight:700;padding:8px 14px;border-radius:999px;border:0;background:var(--card);color:var(--ink);cursor:pointer;box-shadow:0 2px 8px var(--shadow)}
+@media (max-width:420px){.logo{gap:3px}.logo span{width:26px;height:30px;font-size:.9rem;border-radius:7px}.pill{padding:7px 11px}}
+.alist{display:flex;flex-direction:column;gap:8px}
+.arow{display:flex;align-items:center;gap:12px;width:100%;font:inherit;text-align:left;padding:12px 14px;border:0;border-radius:14px;background:var(--bg);color:var(--ink);cursor:pointer;transition:transform .15s}
+.arow:hover{transform:translateX(3px)}
+.anum{font-family:var(--f-display);font-weight:700;min-width:42px}
+.adate{flex:1;min-width:0;color:var(--muted)}
+.astat{font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--tile);color:var(--muted);font-variant-numeric:tabular-nums}
+.astat.done{background:var(--e-soft);color:var(--e-ink)}
+.astat.progress{background:var(--m-soft);color:var(--m-ink)}
+.fb{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:12px}
+.fbtoggle{align-self:flex-start;font:inherit;font-size:.85rem;font-weight:700;color:var(--muted);background:none;border:0;padding:2px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.fbform{display:flex;flex-direction:column;gap:4px}
+.fbin{flex:1;min-width:0;font:inherit;padding:9px 12px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+.fbin:focus{border-color:var(--lvl)}
+.fbcount{align-self:flex-end;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.addr{font-weight:700;color:var(--ink);user-select:all;-webkit-user-select:all}\n.copy{font:inherit;font-size:.75rem;font-weight:700;padding:2px 9px;margin-left:4px;border-radius:999px;border:0;background:var(--tile);color:var(--ink);cursor:pointer}\n.fbnote{margin:0;font-size:.82rem;color:var(--muted);min-height:0}
+.fbnote:empty{display:none}
+.fbnote.good{color:var(--good)} .fbnote.bad{color:var(--bad)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--hid-edge);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo" aria-label="With(in)"><span>W</span><span>I</span><span>T</span><span>H</span><span class="p">I</span><span class="p">N</span></div>
+    <div class="daylabel" id="daylabel"></div>
+    <button class="pill" id="archive">Archive</button>
+    <button class="icon-btn" id="help" aria-label="How to play">?</button>
+  </header>
+  <main id="main"></main>
+</div>
+
+<div class="overlay" id="howto" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="howto-h">
+    <h2 id="howto-h">How to play</h2>
+    <p>Every answer hides a smaller word inside it. The clue hints at both words.</p>
+    <div class="ex">
+      <span class="label">Example</span>
+      <p class="clue">Sit down dinner</p>
+      <div class="tiles"><span class="t">S</span><span class="t p">E</span><span class="t p">A</span><span class="t p">T</span></div>
+      <p style="font-size:.9rem">"Sit down" points to <b>SEAT</b>. "Dinner" points to <b>EAT</b>, hiding inside it. The lavender tiles show where the hidden word sits.</p>
+    </div>
+    <div class="chips"><span class="chip lvl-Easy">Easy</span><span class="chip lvl-Medium">Medium</span><span class="chip lvl-Hard">Hard</span><span style="font-size:.85rem;color:var(--muted)">one new round of each, every day</span></div>
+    <ul>
+      <li>A new round of three puzzles arrives every day at midnight. Missed a day? Past rounds wait in the Archive.</li>
+      <li>You get 3 guesses per puzzle.</li>
+      <li>Guess the full word, or tap the lavender tiles to guess the hidden word. A correct hidden word fills in its tiles.</li>
+      <li>Your last guess must be the full word.</li>
+      <li>Each puzzle is worth up to 6 points. Every guess that isn't the final answer costs 1 point, and so does each clue.</li>
+      <li>One clue unlocks per guess: before guess 1, before guess 2 and before guess 3. Unused clues stay available.</li>
+      <li>Clue 1 shows the first hidden-word letter, clue 2 the first letter, clue 3 the last letter. A clue whose letter is already showing can't be used and costs nothing.</li>
+      <li>Guesses must have the right number of letters to count.</li>\n      <li>Ideas or problems? Every puzzle has a link to email feedback.</li>
+    </ul>
+    <button class="btn" id="howto-close" style="--lvl:var(--hid-edge);--lvl-ink:var(--hid-ink)">Start playing</button>
+  </div>
+</div>
+
+<script type="module">
+const BANK = {"Easy":[["Happy boy","GLAD","LAD"],["Child's slip on ice","SKID","KID"],["Ancient precious metal","GOLD","OLD"],["Cut and jump","CHOP","HOP"],["Boast with a dishcloth","BRAG","RAG"],["Dress you possess","GOWN","OWN"],["Rock the path","SWAY","WAY"],["Walk with a bridge monster","STROLL","TROLL"],["Grim drip","BLEAK","LEAK"],["Toggle the spellcaster","SWITCH","WITCH"],["Book leaf's era","PAGE","AGE"],["Shop that ripped","STORE","TORE"],["Handiwork on the float","CRAFT","RAFT"],["Grin the whole distance","SMILE","MILE"],["Scratchy spellcaster","WITCH","ITCH"],["Time to bolt the door","CLOCK","LOCK"],["Points at the center","SCORE","CORE"],["Peruse the loaf","BREAD","READ"],["Snare a hip-hop verse","TRAP","RAP"],["Undress for vacation","STRIP","TRIP"],["Rattled the fish catcher","SHOOK","HOOK"],["Stain on the cooking pan","SPOT","POT"],["Sick bad guy","VILLAIN","ILL"],["Crush the potatoes","SMASH","MASH"],["Vomit on the church bench","SPEW","PEW"],["Shine when sad","GLOW","LOW"],["Newlywed takes a spin","BRIDE","RIDE"],["Fake pork","SHAM","HAM"],["Talon of justice","CLAW","LAW"],["Ponder the pen fluid","THINK","INK"],["Fruit on a pointed stick","SPEAR","PEAR"],["Rodent of a child","BRAT","RAT"],["Digit that buzzes","THUMB","HUM"],["Sweeping space","BROOM","ROOM"],["Mule's lock opener","DONKEY","KEY"],["Sedan's lasting wound","SCAR","CAR"],["Flee in a superhero's cloak","ESCAPE","CAPE"],["Dark shortage","BLACK","LACK"],["Food massage","GRUB","RUB"],["Low land's back street","VALLEY","ALLEY"],["Locomotive downpour","TRAIN","RAIN"],["Wild pig's paddle","BOAR","OAR"],["Muscle knot on the incline","CRAMP","RAMP"],["Comb in a hurry","BRUSH","RUSH"],["Block with firewood","CLOG","LOG"],["Whirl a bowling target","SPIN","PIN"],["Explosion at the end","BLAST","LAST"],["Decaying orange veggie","CARROT","ROT"],["Trendy snack","CHIP","HIP"],["Old, tired story","STALE","TALE"],["Hairpiece branch","TWIG","WIG"],["Mist while you worship","SPRAY","PRAY"],["Split with the bunny","SHARE","HARE"],["Grizzly listener","BEAR","EAR"],["At what time, chicken?","WHEN","HEN"],["Spooky party thrower","GHOST","HOST"],["Ascend by arm","CLIMB","LIMB"],["Pile of pushpins","STACK","TACK"],["Celebrity road coating","STAR","TAR"],["Martini garnish, still breathing","OLIVE","LIVE"],["Smart crowbar","CLEVER","LEVER"],["Talked with a jab","SPOKE","POKE"],["Mix and loan","BLEND","LEND"],["Low-cost pile","CHEAP","HEAP"],["Wow in the labyrinth","AMAZE","MAZE"],["Jacket made of cereal grain","COAT","OAT"],["Drool into the hole","SPIT","PIT"],["Chaos from the lion","UPROAR","ROAR"],["Celery chat","STALK","TALK"],["Aircraft's highway strip","PLANE","LANE"],["Dull ground","BLAND","LAND"],["Lost pet's serving platter","STRAY","TRAY"],["Chilly reprimand","SCOLD","COLD"],["Thin and spotless","CLEAN","LEAN"],["Ruin the engine grease","SPOIL","OIL"],["Yell when not home","SHOUT","OUT"],["Weighty robbery","THEFT","HEFT"],["Perspire while you dine","SWEAT","EAT"],["Little bird's archery shot","SPARROW","ARROW"],["Adore the mitten","GLOVE","LOVE"],["Cat box sparkle","GLITTER","LITTER"],["Game at the harbor","SPORT","PORT"],["Spot the shoestring","PLACE","LACE"],["Farm vehicle performer","TRACTOR","ACTOR"],["Grain in the hot spell","WHEAT","HEAT"],["Gloomy edge","GRIM","RIM"],["Unknown person's fury","STRANGER","ANGER"],["Seat for your hammer","STOOL","TOOL"],["Self-satisfied coffee cup","SMUG","MUG"],["Squad letting off vapor","STEAM","TEAM"],["Big bird with money","OSTRICH","RICH"],["Halt at the summit","STOP","TOP"],["Flurry this instant","SNOW","NOW"],["Hurried infatuation","CRUSH","RUSH"],["Hard coat of the underworld","SHELL","HELL"],["Footwear for weeding","SHOE","HOE"],["Cussed in that outfit","SWORE","WORE"],["Shake near the bees' home","SHIVER","HIVE"],["Shine with a sly eye","TWINKLE","WINK"],["Tardy dinner dish","PLATE","LATE"],["Great water hole","SWELL","WELL"],["Toasty bee crowd","SWARM","WARM"],["Season for a wedding band","SPRING","RING"],["Storm noise below","THUNDER","UNDER"],["Citrus stove","ORANGE","RANGE"],["Complete pit","WHOLE","HOLE"],["Fruit apiece","PEACH","EACH"],["Stride through the cosmos","SPACE","PACE"],["Genuine breakfast flakes","CEREAL","REAL"],["Gasp at the insect","PANT","ANT"]],"Medium":[["Speech in a gown","ADDRESS","DRESS"],["Fencer's dive","PLUNGE","LUNGE"],["Bracelet's corner","BANGLE","ANGLE"],["Style in the den","FLAIR","LAIR"],["Pure hurry","CHASTE","HASTE"],["Fairy ritual","SPRITE","RITE"],["Hit on a three-wheeler","STRIKE","TRIKE"],["Glisten for that guy","SHIMMER","HIM"],["Tremble at the cow's milk bag","SHUDDER","UDDER"],["Indifferent carpet","SHRUG","RUG"],["Seabird's tin","PELICAN","CAN"],["Force a model's stance","IMPOSE","POSE"],["Blunt and smelly","FRANK","RANK"],["Long for a paycheck","YEARN","EARN"],["Nap at the summit","CREST","REST"],["Dryer fluff support","SPLINT","LINT"],["Clownish seabird's fish limb","PUFFIN","FIN"],["Guided snow ride","SLED","LED"],["Arm joint's gift ribbon","ELBOW","BOW"],["Bet on a stroll","GAMBLE","AMBLE"],["Slow manicure","SNAIL","NAIL"],["On ship with the plank","ABOARD","BOARD"],["Helper's minibus","SERVANT","VAN"],["Feeling the movement","EMOTION","MOTION"],["Contempt for the cob","SCORN","CORN"],["Dry up the curve","PARCH","ARCH"],["Chess piece's offspring","SPAWN","PAWN"],["Grassland breeze","PRAIRIE","AIR"],["Messy writing on hands and knees","SCRAWL","CRAWL"],["Hunting bird's scam","FALCON","CON"],["Knitted in the kitchen appliance","WOVEN","OVEN"],["Mail for the garden pile","COMPOST","POST"],["Tea pastry's ice cream holder","SCONE","CONE"],["Hog's merlot","SWINE","WINE"],["Operating doc's impulse","SURGEON","URGE"],["Stuffy and impolite","PRUDE","RUDE"],["Hospital wing chicken","COWARD","WARD"],["Pipe fixer's timber","PLUMBER","LUMBER"],["Crazy, but rational","INSANE","SANE"],["Halloween gourd's relatives","PUMPKIN","KIN"],["Shred at a steady pace","GRATE","RATE"],["Weak fire","FLAME","LAME"],["Hunt for food in fury","FORAGE","RAGE"],["Divorced and drunk","SPLIT","LIT"],["Serious dance party","GRAVE","RAVE"],["Up after the funeral party","AWAKE","WAKE"],["Shellfish phone","SCALLOP","CALL"],["Taunt with comfort","TEASE","EASE"],["Belt the snare","STRAP","TRAP"],["Swagger out of the groove","STRUT","RUT"],["Break the mad hatmaker","SHATTER","HATTER"],["Lump in the parking area","CLOT","LOT"],["Baby's devoted follower","INFANT","FAN"],["Wobble while playing chase","STAGGER","TAG"],["Bedroom shoe's kisser","SLIPPER","LIP"],["Gap within arm's length","BREACH","REACH"],["Healing crust in a taxi","SCAB","CAB"],["Die by the tree","CROAK","OAK"],["Sleep noise from the mine","SNORE","ORE"],["Seaman feels sick","SAILOR","AIL"],["Hot dog topping celebrity","MUSTARD","STAR"],["Moved smoothly under the cover","SLID","LID"],["Bloodsucker's speaker","VAMPIRE","AMP"],["Selection on the rocks","CHOICE","ICE"],["Uncooked dresser slot","DRAWER","RAW"],["Mix up eggs, babble on","SCRAMBLE","RAMBLE"],["In debt to the bath cloth","TOWEL","OWE"],["Gear for a sketch","SKIT","KIT"],["Leafy head in a sack","CABBAGE","BAG"],["Ancient cart uprising","CHARIOT","RIOT"],["Up in the attic","ALOFT","LOFT"],["Zit's little devil","PIMPLE","IMP"],["Sibling who's someone else","BROTHER","OTHER"],["Sharpen the cell","PHONE","HONE"],["Sulk while away","POUT","OUT"],["Relaxed slope","CHILL","HILL"],["Fail in the wardrobe","CLOSET","LOSE"],["Speak on toast","BUTTER","UTTER"],["Inquire in the hamper","BASKET","ASK"],["Slouch with a bump","SLUMP","LUMP"],["Holy traveler, gloomy","PILGRIM","GRIM"],["Brag in a squabble","CROW","ROW"],["Gather at church","AMASS","MASS"],["Award for a tirade","GRANT","RANT"],["Flower on the weaving frame","BLOOM","LOOM"],["Tease in the swinging bed","HAMMOCK","MOCK"],["Overbearing mom","SMOTHER","MOTHER"],["Attempt in the food cupboard","PANTRY","TRY"],["Fall apart in a street fight","CRUMBLE","RUMBLE"],["Board with a woof","EMBARK","BARK"],["Pray for fewer","BLESS","LESS"],["Frozen dessert wager","SHERBET","BET"],["Smooth onion cousin","SLEEK","LEEK"],["Wax stick's sunbeam","CRAYON","RAY"],["Stare like a gorilla","GAPE","APE"],["Talk from the mountaintop","SPEAK","PEAK"],["Rebound one-sixteenth of a pound","BOUNCE","OUNCE"],["Rosy and drunk","BLUSH","LUSH"],["Pale bird","SWAN","WAN"],["Bright trouble","PLIGHT","LIGHT"],["Killer cake tier","SLAYER","LAYER"],["Drizzle on the ice arena","SPRINKLE","RINK"],["Thread reel in the swimming hole","SPOOL","POOL"],["Dash with the RV","SCAMPER","CAMPER"],["Stinky stream","CREEK","REEK"],["Occasion to let off steam","EVENT","VENT"],["Wrist jewelry sprint","BRACELET","RACE"],["Drop the tablet","SPILL","PILL"],["Bold skin irritation","BRASH","RASH"],["Manage the range","SCOPE","COPE"]],"Hard":[["Defy the oaf","FLOUT","LOUT"],["Coax but pay attention","WHEEDLE","HEED"],["Port with a shady trellis","HARBOR","ARBOR"],["Bitter leaf's plunge","ENDIVE","DIVE"],["Spoof fishing pole","PARODY","ROD"],["Slacks for the junkie","TROUSERS","USER"],["Hefty hype man","STOUT","TOUT"],["Kebab stick's female sheep","SKEWER","EWE"],["Embarrassment with a smile","CHAGRIN","GRIN"],["Volcanic rock seasoning","BASALT","SALT"],["Gloomy flower","MOROSE","ROSE"],["Messy despite being neat","UNKEMPT","KEMPT"],["Nimble snoop","SPRY","PRY"],["Dried plum's ancient letter","PRUNE","RUNE"],["Little fish thaw","SMELT","MELT"],["Cod cousin at the pier","HADDOCK","DOCK"],["Hidden remedy","OBSCURE","CURE"],["Meager hypocrisy","SCANT","CANT"],["Excuse what's finished","CONDONE","DONE"],["Unfavorable poem line","ADVERSE","VERSE"],["Wild age","FERAL","ERA"],["Insult to the face","AFFRONT","FRONT"],["Pained face, then pepper spray","GRIMACE","MACE"],["Betrayal with a motive","TREASON","REASON"],["Incline for an easy gait","SLOPE","LOPE"],["Beg and wander","GROVEL","ROVE"],["Fungus collar","TRUFFLE","RUFF"],["Humble poem","MODEST","ODE"],["Monkey windfall","BABOON","BOON"],["Funeral poem's limb","ELEGY","LEG"],["Party hard, then wake up","CAROUSE","ROUSE"],["Lecture that phoned","HARANGUE","RANG"],["Give and pack away","BESTOW","STOW"],["Precious metal's Roman language","PLATINUM","LATIN"],["Gnaw and chop","CHEW","HEW"],["Drawing on a two-masted boat","SKETCH","KETCH"],["Root veggie's little bite","PARSNIP","NIP"],["Scant sentence analysis","SPARSE","PARSE"],["Tartan set down","PLAID","LAID"],["Cowardly blackbird","CRAVEN","RAVEN"],["Make amends with the right pitch","ATONE","TONE"],["Soothe the kitty","PLACATE","CAT"],["Regret the porridge","GRUEL","RUE"],["Charm on a pack animal","AMULET","MULE"],["Trivial gun","TRIFLE","RIFLE"],["Early release part","PAROLE","ROLE"],["Whim's cost","CAPRICE","PRICE"],["Greed for grain","AVARICE","RICE"],["Stomp on plenty","TRAMPLE","AMPLE"],["Condemn the legend","DEPLORE","LORE"],["Pirate disease that's shapely","SCURVY","CURVY"],["Pointed fish","SPIKE","PIKE"],["Pain-free stretch, in fact","REMISSION","MISSION"],["Lesson story for farmland","PARABLE","ARABLE"],["Jiggle the fish","SHAKE","HAKE"],["Compliment the second one","FLATTER","LATTER"],["Snake along, nimbly","SLITHER","LITHE"],["Banded stone's fence opening","AGATE","GATE"],["Wood-munching speck","TERMITE","MITE"],["Babble like a baby's toy","PRATTLE","RATTLE"],["Fuel the fire, take a hit","STOKE","TOKE"],["Customer's legal claim","CLIENT","LIEN"],["Jail connection","CLINK","LINK"],["Calm, yet corrosive","PLACID","ACID"],["Plentiful leap","ABOUND","BOUND"],["Bluff with shine","BLUSTER","LUSTER"],["Diagonal fabric's testament","TWILL","WILL"],["Sneakiness in blue-green","STEALTH","TEAL"],["Foil the bump","THWART","WART"],["Repair the law","AMEND","MEND"],["Strict seabird","STERN","TERN"],["Fish hawk's quarry","OSPREY","PREY"],["Allure of a love affair","GLAMOUR","AMOUR"],["Difficult leafy green","CHARD","HARD"],["Healthy sea giant","WHALE","HALE"],["Superficial and sacred","SHALLOW","HALLOW"],["Fondness for singing","PENCHANT","CHANT"],["Harsh sea god's fork","STRIDENT","TRIDENT"],["Hanging frame permits","GALLOWS","ALLOW"],["Charm with cunning","BEGUILE","GUILE"],["Honor with a stringed instrument","SALUTE","LUTE"],["Ready-to-eat nonsense","TRIPE","RIPE"],["Tyrant's stain","DESPOT","SPOT"],["Short trip with your mother's sister","JAUNT","AUNT"],["Conflict that's widespread","STRIFE","RIFE"],["Hope for a church steeple","ASPIRE","SPIRE"],["Reject the ashes jar","SPURN","URN"],["Thief takes the castle","CROOK","ROOK"],["Scent that seethes","PERFUME","FUME"],["Comfort the flatfish","CONSOLE","SOLE"],["Sedate helper","STAID","AID"],["Bold demolition","BRAZEN","RAZE"],["Rough paddles","COARSE","OARS"],["Sharp pain in the bird's limb","TWINGE","WING"],["Small onion's ration","SHALLOT","ALLOT"],["Sword case on the moor","SHEATH","HEATH"],["Follow with a lawsuit","ENSUE","SUE"],["Mockery of a waistcoat","TRAVESTY","VEST"],["Practice in the funeral car","REHEARSE","HEARSE"],["Captain's smoked fish","SKIPPER","KIPPER"],["Mourn and say so be it","LAMENT","AMEN"],["Hate the vow","LOATHE","OATH"],["Mushroom seed in the skin","SPORE","PORE"],["Secret, yet obvious","COVERT","OVERT"],["Quench by the pond","SLAKE","LAKE"],["Regret in dots and dashes","REMORSE","MORSE"],["Used up and cooped up","SPENT","PENT"],["Wear away on horseback","ERODE","RODE"],["Expert flower","MASTER","ASTER"],["Excuse by message","PRETEXT","TEXT"]]};
+const LAUNCH = new Date(2026, 9, 19);   // Day 1 = Oct 19, 2026, in each player's local time
+const MAX = 6, GUESSES = 3, FB_MAX = 50;
+
+const pad = n=>String(n).padStart(2,"0");
+const dateKey = d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const startOfDay = d=>new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const todayNum = ()=>Math.max(1, Math.round((startOfDay(new Date())-LAUNCH)/864e5)+1);
+function dayFor(n){
+  const d = new Date(LAUNCH.getFullYear(), LAUNCH.getMonth(), LAUNCH.getDate()+n-1);
+  const i = (n-1) % BANK.Easy.length;
+  const mk = ([clue,answer,inner],level)=>({clue,answer,inner,level,start:answer.indexOf(inner)});
+  return { key: dateKey(d), num: n, label: d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}),
+    puzzles: [mk(BANK.Easy[i],"Easy"), mk(BANK.Medium[i],"Medium"), mk(BANK.Hard[i],"Hard")] };
+}
+let TODAY = todayNum();
+let DAY = dayFor(TODAY);
+let view = "play";   // "play" or "archive"
+const isToday = ()=>DAY.num===TODAY;
+
+const KEY = "within-daily-v1";
+let save = {}; try{ save = JSON.parse(localStorage.getItem(KEY)||"{}") }catch(e){}
+function persist(){
+  const keys = Object.keys(save).sort(); while(keys.length>400) delete save[keys.shift()];
+  try{ localStorage.setItem(KEY, JSON.stringify(save)) }catch(e){}
+}
+function statusOf(n){
+  const s = save[dayFor(n).key];
+  if(!s || (s.idx===0 && s.p[0].status==="playing" && s.p[0].used===0 && s.p[0].clueUsed.length===0)) return {kind:"new", text:"Not played"};
+  if(s.idx>=3) return {kind:"done", text:`${s.p.reduce((a,x)=>a+(x.status==="won"?x.points:0),0)}/18`};
+  return {kind:"progress", text:"In progress"};
+}
+function dayState(){
+  if(!save[DAY.key]) save[DAY.key] = {idx:0, fb:{}, p:DAY.puzzles.map(()=>({used:0, clueUsed:[], tries:[], hiddenFound:false, status:"playing", points:0}))};
+  if(!save[DAY.key].fb) save[DAY.key].fb = {};
+  return save[DAY.key];
+}
+
+let msg = {text:"", kind:""};
+let fx = {flip:[], win:false, shake:false};
+let mode = "full";
+let fbOpen = false, fbNote = {text:"", kind:""};
+
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dayTotal = s=>s.p.reduce((a,x)=>a+(x.status==="won"?x.points:0),0);
+const isHidden = (pz,i)=>i>=pz.start && i<pz.start+pz.inner.length;
+const canGuessHidden = st=>st.status==="playing" && !st.hiddenFound && (GUESSES-st.used)>=2;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* Clues: k=0 first hidden letter, k=1 first letter (second if the hidden word starts the answer), k=2 last letter */
+function clueTile(pz,k){ return k===0 ? pz.start : k===1 ? (pz.start===0 ? 1 : 0) : pz.answer.length-1; }
+function revealedSet(pz, st){
+  const out = new Set(st.clueUsed.map(k=>clueTile(pz,k)));
+  if(st.hiddenFound) for(let i=pz.start;i<pz.start+pz.inner.length;i++) out.add(i);
+  return out;
+}
+function nextClue(pz, st){
+  if(st.status!=="playing") return -1;
+  const rev = revealedSet(pz, st);
+  const unlocked = Math.min(3, st.used+1);
+  for(let k=0;k<unlocked;k++) if(!st.clueUsed.includes(k) && !rev.has(clueTile(pz,k))) return k;
+  return -1;
+}
+const points = st=>MAX - st.used - st.clueUsed.length;
+
+const FEEDBACK_EMAIL = "sheepdogfan2019@gmail.com";
+
+function headerDay(){
+  const label = view==="archive" ? `<b>Archive</b><span>${TODAY-1} past ${TODAY-1===1?"round":"rounds"}</span>`
+    : `<b>Daily #${DAY.num}</b><span>${isToday()?"Today":esc(DAY.label)}</span>`;
+  $("#daylabel").innerHTML = label;
+  const ab = $("#archive");
+  if(view==="archive" || !isToday()){ ab.textContent="Today"; ab.setAttribute("aria-label","Back to today's round"); }
+  else { ab.textContent="Archive"; ab.setAttribute("aria-label","Play past rounds"); }
+}
+function goDay(n){ DAY=dayFor(n); view="play"; mode="full"; msg={text:"",kind:""}; fbOpen=false; fbNote={text:"",kind:""}; render(); window.scrollTo({top:0}); }
+$("#archive").onclick=()=>{ if(view==="archive" || !isToday()) goDay(TODAY); else { view="archive"; render(); } };
+
+function renderArchive(){
+  delete document.body.dataset.lvl;
+  const rows=[]; for(let n=TODAY-1;n>=1;n--){ const d=dayFor(n), st=statusOf(n);
+    rows.push(`<button class="arow" data-n="${n}"><span class="anum">#${n}</span><span class="adate">${esc(d.label)}</span><span class="astat ${st.kind}">${st.text}</span></button>`); }
+  $("#main").innerHTML = `
+  <section class="card">
+    <span class="label">Past rounds</span>
+    ${rows.length ? `<div class="alist">${rows.join("")}</div>` : `<p class="msg">Past rounds will appear here starting tomorrow. Each day's round joins the archive once the next one arrives.</p>`}
+    <button class="btn" id="totoday" style="--lvl:var(--hid-edge)">Play today's round</button>
+  </section>`;
+  document.querySelectorAll(".arow").forEach(b=>b.onclick=()=>goDay(+b.dataset.n));
+  $("#totoday").onclick=()=>goDay(TODAY);
+}
+
+function tilesHTML(pz, st){
+  const rev = revealedSet(pz, st);
+  const done = st.status!=="playing";
+  const tag = done ? "span" : "button";
+  return [...pz.answer].map((ch,i)=>{
+    const cls = ["t"]; if(isHidden(pz,i)) cls.push("p");
+    if(fx.flip.includes(i)) cls.push("flip");
+    if(fx.win) cls.push("win");
+    const delay = fx.win ? ` style="animation-delay:${i*70}ms"` : fx.flip.includes(i) ? ` style="animation-delay:${fx.flip.indexOf(i)*60}ms"` : "";
+    const attrs = done ? "" : ` type="button" data-i="${i}" aria-label="${isHidden(pz,i)?"Hidden word tile, tap to guess the hidden word":"Tap to guess the full word"}"`;
+    return `<${tag} class="${cls.join(" ")}"${attrs}${delay}>${done||rev.has(i)?ch:""}</${tag}>`;
+  }).join("");
+}
+
+function burstHTML(){
+  if(!fx.win || reduced) return "";
+  const cols = ["var(--e)","var(--m)","var(--h)","var(--hid)","var(--hid-edge)"];
+  return `<div class="burst" aria-hidden="true">${Array.from({length:26},(_,i)=>{
+    const a = (i/26)*Math.PI*2, d = 90+Math.random()*90;
+    return `<i style="background:${cols[i%cols.length]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d-40}px;--r:${Math.random()*360}deg;animation-delay:${Math.random()*120}ms"></i>`;
+  }).join("")}</div>`;
+}
+
+function feedbackHTML(s){
+  const pz = DAY.puzzles[s.idx], st = s.p[s.idx], done = st.status!=="playing";
+  const subject = `With(in) feedback: Daily #${DAY.num}, ${pz.level}`;
+  const body = `Clue: ${pz.clue}\n${done?`Answer: ${pz.answer} (hides ${pz.inner})\n`:""}Level: ${pz.level}\nDate: ${DAY.key}\n\nMy feedback:\n`;
+  const href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `
+  <div class="fb">
+    <a class="fbtoggle" href="${href}">Email feedback on this clue</a>
+    <p class="fbnote">Or write to <span class="addr">${FEEDBACK_EMAIL}</span> <button class="copy" id="copyaddr" type="button">Copy</button></p>
+    <p class="fbnote ${fbNote.kind}">${esc(fbNote.text)}</p>
+  </div>`;
+}
+
+function wireFeedback(){
+  const c = $("#copyaddr"); if(!c) return;
+  c.onclick = async()=>{
+    try{ await navigator.clipboard.writeText(FEEDBACK_EMAIL); fbNote={text:"Email address copied.",kind:"good"}; }
+    catch(e){ fbNote={text:"Copy didn't work. Press and hold the address to copy it.",kind:""}; }
+    render();
+  };
+}
+
+function renderPuzzle(s){
+  const pz = DAY.puzzles[s.idx], st = s.p[s.idx];
+  document.body.dataset.lvl = pz.level;
+  if(!canGuessHidden(st)) mode = "full";
+  const nk = nextClue(pz, st);
+  const worth = points(st);
+  const left = GUESSES - st.used;
+  const len = mode==="hidden" ? pz.inner.length : pz.answer.length;
+  const hidOk = canGuessHidden(st);
+  const hidNote = st.hiddenFound ? "Hidden word found" : !hidOk && st.status==="playing" ? "Last guess: full word" : "Hidden word";
+  const clueLabel = nk>=0 ? `Offer clue ${nk+1}` : (st.clueUsed.length>=3 ? "No clues left" : "No new clue yet");
+
+  $("#main").innerHTML = `
+  <section class="card lvl-${pz.level}" aria-live="polite">
+    ${burstHTML()}
+    <div class="meta">
+      <span>Puzzle ${s.idx+1} of 3</span>
+      <span class="level">${pz.level}</span>
+    </div>
+    <div class="steps" aria-hidden="true">${["e","m","h"].map((c,i)=>`<i class="${i<=s.idx?c:""}"></i>`).join("")}</div>
+    <p class="clue">${esc(pz.clue)}</p>
+    <div class="tiles ${st.status==="playing"?`mode-${mode}`:""} ${fx.shake?"shake":""}" aria-label="${pz.answer.length} letters, ${pz.inner.length} of them hidden-word tiles">${tilesHTML(pz, st)}</div>
+    ${st.status==="playing" ? `
+      <div class="modes" role="group" aria-label="What are you guessing?">
+        <button class="mode" data-m="full" aria-pressed="${mode==="full"}">Full word · ${pz.answer.length}</button>
+        <button class="mode hid" data-m="hidden" aria-pressed="${mode==="hidden"}" ${hidOk?"":"disabled"}>${hidNote}${hidOk?` · ${pz.inner.length}`:""}</button>
+      </div>
+      <form class="row" id="gform" autocomplete="off">
+        <input class="guess ${mode==="hidden"?"hid":""}" id="guess-${DAY.key}-${s.idx}-${mode}" maxlength="${len}" placeholder="${"•".repeat(len)}" aria-label="${mode==="hidden"?"Hidden word guess":"Full word guess"}, ${len} letters" autocapitalize="characters" spellcheck="false">
+        <button class="btn ${mode==="hidden"?"hid":""}" type="submit">Guess</button>
+      </form>
+      <div class="bar">
+        <span class="pts"><span class="worth" aria-label="Worth ${worth} points">${worth}</span><span>pts on the line<br><span class="dots" aria-label="${left} guesses left">${[0,1,2].map(i=>`<i class="${i<st.used?"used":""}"></i>`).join("")}</span></span></span>
+        <button class="btn alt" id="clue" ${nk>=0?"":"disabled"}>${clueLabel}</button>
+      </div>` : `
+      <div class="result">
+        <span class="big">${st.status==="won"?(st.points===6?"Perfect! +6":`Solved! +${st.points}`):"So close. +0"}</span>
+        <span class="eq"><b>${pz.answer}</b> hides <b>${pz.inner}</b></span>
+      </div>
+      <button class="btn" id="next">${s.idx<2?"Next puzzle":(isToday()?"See today's score":"See round score")}</button>`}
+    <p class="msg ${msg.kind}">${esc(msg.text)}</p>
+    ${st.tries.length?`<div class="tries" aria-label="Previous guesses">${st.tries.map(t=>`<span class="${t.ok?"":"x"} ${t.hidden?"h":""}">${esc(t.g)}</span>`).join("")}</div>`:""}
+    ${feedbackHTML(s)}
+  </section>`;
+  fx = {flip:[], win:false, shake:false};
+  wireFeedback(s);
+
+  const setMode = m=>{ if(m==="hidden" && !canGuessHidden(st)) return; if(mode!==m){ mode=m; msg={text:"",kind:""}; render(); } focusGuess(); };
+  document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+  document.querySelectorAll("button.t").forEach(b=>b.onclick=()=>setMode(isHidden(pz,+b.dataset.i)?"hidden":"full"));
+
+  const f=$("#gform");
+  if(f){
+    const inp=f.querySelector("input");
+    inp.addEventListener("input",()=>{ inp.value=inp.value.toUpperCase().replace(/[^A-Z]/g,""); });
+    f.onsubmit=e=>{
+      e.preventDefault();
+      const g=inp.value.toUpperCase().replace(/[^A-Z]/g,"");
+      const target = mode==="hidden" ? pz.inner : pz.answer;
+      if(g.length!==target.length){ msg={text:`${mode==="hidden"?"The hidden word":"Your guess"} needs ${target.length} letters. That one didn't count.`,kind:"bad"}; fx.shake=true; render(); focusGuess(); return; }
+      if(mode==="full" && g===pz.answer){
+        st.status="won"; st.points=points(st); st.tries.push({g,hidden:false,ok:true}); msg={text:"",kind:""}; fx.win=true;
+      } else {
+        st.used++;
+        const ok = mode==="hidden" && g===pz.inner;
+        st.tries.push({g,hidden:mode==="hidden",ok});
+        if(ok){ st.hiddenFound=true; for(let i=pz.start;i<pz.start+pz.inner.length;i++) fx.flip.push(i); }
+        else fx.shake=true;
+        if(st.used>=GUESSES){ st.status="lost"; st.points=0; msg={text:"",kind:""}; fx.flip=[...pz.answer].map((_,i)=>i); }
+        else {
+          const rem = GUESSES-st.used;
+          const clueNote = nextClue(pz, st)>=0 ? " A clue is available." : "";
+          const lastNote = rem===1 ? " Your last guess must be the full word." : "";
+          msg = ok ? {text:`Hidden word found! ${rem} ${rem===1?"guess":"guesses"} left.${lastNote}${clueNote}`,kind:"good"}
+                   : {text:`Not it. ${rem} ${rem===1?"guess":"guesses"} left.${lastNote}${clueNote}`,kind:"bad"};
+        }
+        mode="full";
+      }
+      persist(); render(); if(st.status==="playing") focusGuess();
+    };
+  }
+  const cb=$("#clue");
+  if(cb) cb.onclick=()=>{
+    const k = nextClue(pz, st); if(k<0) return;
+    st.clueUsed.push(k); fx.flip=[clueTile(pz,k)];
+    let what = ["the first hidden-word letter","the first letter","the last letter"][k];
+    if(k===1 && pz.start===0) what="the second letter";
+    msg={text:`Clue ${k+1} shows ${what}.`,kind:""};
+    persist(); render(); focusGuess();
+  };
+  const nb=$("#next");
+  if(nb) nb.onclick=()=>{ s.idx = s.idx<2 ? s.idx+1 : 3; mode="full"; msg={text:"",kind:""}; fbOpen=false; fbNote={text:"",kind:""}; persist(); render(); };
+}
+
+function focusGuess(){ const i=document.querySelector(".guess"); if(i) i.focus({preventScroll:true}); }
+
+function untilTomorrow(){
+  const now=new Date(), t=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+  const s=Math.max(0,Math.floor((t-now)/1000)), h=Math.floor(s/3600), m=Math.floor(s%3600/60), sec=s%60;
+  return `${h}h ${pad(m)}m ${pad(sec)}s`;
+}
+let ticker = null;
+
+function renderSummary(s){
+  delete document.body.dataset.lvl;
+  const total = dayTotal(s);
+  const lines = DAY.puzzles.map((pz,i)=>{ const st=s.p[i]; return `<div class="line lvl-${pz.level}"><small>${pz.level}</small><span class="w">${pz.answer}${st.status==="lost"?" · missed":""}</span><span class="n">${st.status==="won"?st.points:0}</span></div>`; }).join("");
+  const share = `With(in) #${DAY.num}: ${total}/18\n` + DAY.puzzles.map((pz,i)=>`${{Easy:"🟢",Medium:"🟠",Hard:"🔴"}[pz.level]} ${s.p[i].status==="won"?s.p[i].points:"✗"}`).join("  ");
+  fx.win = total>=12;
+  $("#main").innerHTML = `
+  <section class="card summary">
+    ${burstHTML()}
+    <span class="label">Daily #${DAY.num} complete</span>
+    <h2>${total} <small>/ 18 points</small></h2>
+    <div class="lines">${lines}</div>
+    <div class="row" style="flex-wrap:wrap;align-items:center">
+      <button class="btn" id="copy" style="--lvl:var(--hid-edge)">Copy score</button>
+      ${isToday() ? `<span class="next">Next round in <b id="countdown">${untilTomorrow()}</b></span>`
+        : `<button class="btn alt" id="toarch">Back to archive</button><button class="btn alt" id="totoday">Today's round</button>`}
+    </div>
+    ${isToday() && TODAY>1 ? `<button class="fbtoggle" id="toarch2">Play past rounds in the archive</button>` : ""}
+    <p class="msg" id="cmsg" style="white-space:pre-line"></p>
+  </section>`;
+  fx = {flip:[], win:false, shake:false};
+  [$("#toarch"),$("#toarch2")].forEach(b=>{ if(b) b.onclick=()=>{ view="archive"; render(); }; });
+  const tt=$("#totoday"); if(tt) tt.onclick=()=>goDay(TODAY);
+  $("#copy").onclick=async()=>{
+    try{ await navigator.clipboard.writeText(share); $("#cmsg").textContent="Score copied."; }
+    catch(e){ $("#cmsg").textContent = share; }
+  };
+  clearInterval(ticker);
+  ticker = setInterval(()=>{ const c=$("#countdown"); if(c) c.textContent=untilTomorrow(); checkNewDay(); },1000);
+}
+
+function checkNewDay(){
+  const n = todayNum(); if(n===TODAY) return;
+  const wasToday = isToday(); TODAY = n; clearInterval(ticker);
+  if(wasToday && view==="play") goDay(TODAY); else render();
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) checkNewDay(); });
+setInterval(checkNewDay, 30000);
+
+function render(){
+  headerDay();
+  if(view==="archive"){ clearInterval(ticker); renderArchive(); return; }
+  const s = dayState();
+  if(s.idx>=3) renderSummary(s); else { clearInterval(ticker); renderPuzzle(s); }
+}
+
+function showHow(v){ $("#howto").hidden=!v; if(v) $("#howto-close").focus(); }
+$("#help").onclick=()=>showHow(true);
+$("#howto-close").onclick=()=>{ showHow(false); try{localStorage.setItem("within-seen","1")}catch(e){} focusGuess(); };
+$("#howto").addEventListener("click",e=>{ if(e.target.id==="howto") $("#howto-close").click(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#howto").hidden) $("#howto-close").click(); });
+
+render();
+let seen=false; try{ seen=!!localStorage.getItem("within-seen") }catch(e){}
+if(!seen) showHow(true);
+</script>
+<script>
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
